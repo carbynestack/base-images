@@ -1,0 +1,99 @@
+#
+# Copyright (c) 2021 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository https://github.com/carbynestack/base-images.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955bbe
+# 20210827
+# https://hub.docker.com/layers/ubuntu/library/ubuntu/focal-20210827/images/sha256-10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955bbe
+# https://github.com/tianon/docker-brew-ubuntu-core/blob/49f002ba206e2cea2024aaa9f6f4ee4e9fb5c084/focal
+
+ARG VERSION
+ARG ARTIFACT_NAME="spdz"
+ARG ARTIFACT_TAG="20210827"
+ARG DESCRIPTION="Carbyne Stack SPDZ Base Image"
+ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
+ARG MP_SPDZ_VERSION="v0.1.3"
+ARG CRYPTO_MATERIAL_ARCHIVE=fake-crypto-material.zip
+
+ENV GROUP_ID=1000 \
+    GROUP_NAME="cs" \
+    USER_NAME="cs" \
+    USER_ID=1000 \
+    USER_HOME="/mp-spdz"
+
+LABEL maintainer="https://carbynestack.io"
+LABEL description="${DESCRIPTION}"
+LABEL 3rd-party-disclosure="${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip"
+
+WORKDIR /
+
+RUN set -uex \
+    && umask 0027 \
+    && apt-get update -y \
+    && apt-get install python3 ca-certificates --no-install-recommends -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get install automake build-essential git libboost-dev libboost-thread-dev libsodium-dev libssl-dev libtool m4 texinfo yasm unzip --no-install-recommends -y \
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/data61/MP-SPDZ mp-spdz-${MP_SPDZ_VERSION} && \
+  ln -s mp-spdz-${MP_SPDZ_VERSION} ${USER_HOME}
+
+WORKDIR ${USER_HOME}
+
+RUN git checkout ${MP_SPDZ_VERSION}
+
+RUN echo USE_NTL = 0 >> CONFIG.mine && \
+  echo USE_GF2N_LONG = 0 >> CONFIG.mine && \
+  echo MOD = -DMAX_MOD_SZ=6 >> CONFIG.mine && \
+  echo ARCH = -march=native >> CONFIG.mine && \
+  echo MY_CFLAGS = -DINSECURE >> CONFIG.mine
+
+# Compile MP-SPDZ
+RUN make -j mpir
+RUN mv local/lib/* /usr/local/lib/
+
+# Compile ONLY SPDZ-2 Online
+RUN make -j online
+
+RUN ./Scripts/tldr.sh
+
+ENV LD_LIBRARY_PATH="/usr/local/lib"
+
+# prepare Crypto Material
+COPY ${CRYPTO_MATERIAL_ARCHIVE} /mp-spdz/material.jar
+RUN unzip -o -d Player-Data material.jar && \
+  rm material.jar
+
+RUN apt-get remove automake build-essential git libboost-dev libboost-thread-dev libssl-dev libtool m4 texinfo yasm unzip -y --purge \
+  && DEBIAN_FRONTEND=noninteractive apt-get autoremove --purge -y \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+ADD additional-components/spdz-base /3RD-PARTY-LICENSES
+
+RUN mkdir -p /3RD-PARTY-LICENSES \
+  && printf "# Third-Party Disclosure Information\n\
+Please find details on third party software components and their licenses \
+distributed with the _${DESCRIPTION}_ in the following disclosure \
+documentation:\\\\\n\
+[Third Party Disclosure Documentation](${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip)\n\
+\n## Additional Dependencies\n\
+Details on additional third party software components and their licenses \
+distributed with this image, that have not been installed using the package \
+manager, are also provided in the [3RD-PARTY-LICENSES](./) folder.\n\
+\n## GO Based Services\n\
+Docker images for services built using [ko](https://github.com/google/ko) \
+provide further information about additional dependencies in the folder \
+[/var/run/ko](/var/run/ko).\n"\
+    > /3RD-PARTY-LICENSES/disclosure.md \
+  && chmod -R ugo+rX-w /3RD-PARTY-LICENSES
+
+RUN groupadd -g ${GROUP_ID} ${GROUP_NAME} \
+    && useradd -m -d ${USER_HOME} -s /usr/sbin/nologin -g ${GROUP_ID} -u ${USER_ID} ${USER_NAME} \
+    && sed -i "s/\/bin\/bash/\/usr\/sbin\/nologin/" /etc/passwd
+
+RUN chown -R ${USER_ID}:${GROUP_ID} ./

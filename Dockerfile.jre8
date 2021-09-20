@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2021 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository https://github.com/carbynestack/base-images.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955bbe
+# 20210827
+# https://hub.docker.com/layers/ubuntu/library/ubuntu/focal-20210827/images/sha256-10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955bbe
+# https://github.com/tianon/docker-brew-ubuntu-core/blob/49f002ba206e2cea2024aaa9f6f4ee4e9fb5c084/focal
+
+ARG VERSION
+ARG ARTIFACT_NAME="openjdk"
+ARG ARTIFACT_TAG="jre8-20210827"
+ARG DESCRIPTION="Carbyne Stack OpenJDK JRE8 Base Image"
+ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
+
+LABEL maintainer="https://carbynestack.io"
+LABEL description="${DESCRIPTION}"
+LABEL 3rd-party-disclosure="${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip"
+
+RUN set -uex \
+    && umask 0027 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates-java openjdk-8-jre-headless \
+# cleanup
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /3RD-PARTY-LICENSES && \
+printf "# Third-Party Disclosure Information\n\
+Please find details on third party software components and their licenses \
+distributed with the _${DESCRIPTION}_ in the following disclosure \
+documentation:\\\\\n\
+[Third Party Disclosure Documentation](${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip)\n"\
+> /3RD-PARTY-LICENSES/disclosure.md && \
+  chmod -R ugo+rX-w /3RD-PARTY-LICENSES

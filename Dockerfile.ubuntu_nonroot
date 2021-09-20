@@ -1,0 +1,55 @@
+#
+# Copyright (c) 2021 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository https://github.com/carbynestack/base-images.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955bbe
+# 20210827
+# https://hub.docker.com/layers/ubuntu/library/ubuntu/focal-20210827/images/sha256-10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955bbe
+# https://github.com/tianon/docker-brew-ubuntu-core/blob/49f002ba206e2cea2024aaa9f6f4ee4e9fb5c084/focal
+
+ARG VERSION
+ARG ARTIFACT_NAME="ubuntu"
+ARG ARTIFACT_TAG="20.04-20210827-nonroot"
+ARG DESCRIPTION="Carbyne Stack Ubuntu Docker Base Image"
+ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
+
+ENV GROUP_ID=1000 \
+    GROUP_NAME="cs" \
+    USER_NAME="cs" \
+    USER_ID=1000 \
+    USER_HOME="/cs"
+
+LABEL maintainer="https://carbynestack.io"
+LABEL description="${DESCRIPTION}"
+LABEL 3rd-party-disclosure="${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip"
+
+RUN set -uex \
+    && umask 0027 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+# cleanup
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /3RD-PARTY-LICENSES && \
+printf "# Third-Party Disclosure Information\n\
+Please find details on third party software components and their licenses \
+distributed with the _${DESCRIPTION}_ in the following disclosure \
+documentation:\\\\\n\
+[Third Party Disclosure Documentation](${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip)\n\
+\n## GO Based Services\n\
+Docker images for services built using [ko](https://github.com/google/ko) \
+provide further information about additional dependencies in the folder \
+[/var/run/ko](/var/run/ko).\n"\
+> /3RD-PARTY-LICENSES/disclosure.md && \
+  chmod -R ugo+rX-w /3RD-PARTY-LICENSES
+
+RUN groupadd -g ${GROUP_ID} ${GROUP_NAME} \
+    && useradd -m -d ${USER_HOME} -s /usr/sbin/nologin -g ${GROUP_ID} -u ${USER_ID} ${USER_NAME} \
+    && sed -i "s/\/bin\/bash/\/usr\/sbin\/nologin/" /etc/passwd
+
+USER ${USER_ID}:${GROUP_ID}
+WORKDIR ${USER_HOME}

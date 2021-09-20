@@ -6,9 +6,10 @@ This project provides _Dockerfiles_ for all base images used to build and
 publish the _Carbyne Stack_ services.
 
 Prior to release, the respective Docker images are scanned offline for 3rd-party
-software that is redistributed within the image. The respective Software Bill of
-Materials (SBOM), copyright information and license texts, as well as the source
-code are packed and provided on the GitHub release page where applicable.
+software packages that are redistributed within the image. The respective
+Software Bill of Materials (SBOM), copyright information and license texts, as
+well as the source code are packed and provided on the GitHub release page where
+applicable.
 
 ## License
 
