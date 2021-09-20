@@ -27,6 +27,7 @@ ENV GROUP_ID=1000 \
 LABEL maintainer="https://carbynestack.io"
 LABEL description="${DESCRIPTION}"
 LABEL 3rd-party-disclosure="${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip"
+LABEL org.opencontainers.image.source="https://github.com/carbynestack/base-images"
 
 WORKDIR /
 
@@ -72,8 +73,6 @@ RUN apt-get remove automake build-essential git libboost-dev libboost-thread-dev
   && DEBIAN_FRONTEND=noninteractive apt-get autoremove --purge -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-
-ADD additional-components/spdz-base /3RD-PARTY-LICENSES
 
 RUN mkdir -p /3RD-PARTY-LICENSES \
   && printf "# Third-Party Disclosure Information\n\

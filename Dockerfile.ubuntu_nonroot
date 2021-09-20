@@ -25,6 +25,7 @@ ENV GROUP_ID=1000 \
 LABEL maintainer="https://carbynestack.io"
 LABEL description="${DESCRIPTION}"
 LABEL 3rd-party-disclosure="${RELEASE_PAGE}/download/${VERSION}/${ARTIFACT_NAME}_${ARTIFACT_TAG}-3rd-party-disclosure.zip"
+LABEL org.opencontainers.image.source="https://github.com/carbynestack/base-images"
 
 RUN set -uex \
     && umask 0027 \
