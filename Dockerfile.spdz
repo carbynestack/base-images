@@ -12,10 +12,9 @@ FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955
 
 ARG VERSION
 ARG ARTIFACT_NAME="spdz"
-ARG ARTIFACT_TAG="20220429"
+ARG ARTIFACT_TAG="v0.2.8"
 ARG DESCRIPTION="Carbyne Stack SPDZ Base Image"
 ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
-ARG MP_SPDZ_VERSION="v0.2.8"
 ARG PRIME="198766463529478683931867765928436695041"
 ARG MAC_KEY_P_P0="-88222337191559387830816715872691188861"
 ARG MAC_KEY_P_P1="1113507028231509545156335486838233835"
@@ -44,12 +43,12 @@ RUN set -uex \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/data61/MP-SPDZ mp-spdz-${MP_SPDZ_VERSION} && \
-  ln -s mp-spdz-${MP_SPDZ_VERSION} ${USER_HOME}
+RUN git clone https://github.com/data61/MP-SPDZ mp-spdz-${ARTIFACT_TAG} && \
+  ln -s mp-spdz-${ARTIFACT_TAG} ${USER_HOME}
 
 WORKDIR ${USER_HOME}
 
-RUN git checkout ${MP_SPDZ_VERSION} && \
+RUN git checkout ${ARTIFACT_TAG} && \
   git submodule set-url -- mpir https://github.com/wbhart/mpir
 
 RUN echo USE_GF2N_LONG = 0 >> CONFIG.mine && \
