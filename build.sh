@@ -8,7 +8,7 @@
 
 
 REPOSITORY="ghcr.io/carbynestack"
-VERSION="0.1"
+VERSION="0.2"
 
 buildImage() {
   docker build -f ${1} . --build-arg VERSION=${VERSION} -t ${REPOSITORY}/${2}:${3}
