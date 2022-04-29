@@ -12,11 +12,15 @@ FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955
 
 ARG VERSION
 ARG ARTIFACT_NAME="spdz"
-ARG ARTIFACT_TAG="20210827"
+ARG ARTIFACT_TAG="20220429"
 ARG DESCRIPTION="Carbyne Stack SPDZ Base Image"
 ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
-ARG MP_SPDZ_VERSION="v0.1.3"
-ARG CRYPTO_MATERIAL_ARCHIVE=fake-crypto-material.zip
+ARG MP_SPDZ_VERSION="v0.2.8"
+ARG PRIME="198766463529478683931867765928436695041"
+ARG MAC_KEY_P_P0="-88222337191559387830816715872691188861"
+ARG MAC_KEY_P_P1="1113507028231509545156335486838233835"
+ARG MAC_KEY_2_P0="0xb660b323e6"
+ARG MAC_KEY_2_P1="0x4ec9a0343c"
 
 ENV GROUP_ID=1000 \
     GROUP_NAME="cs" \
@@ -45,12 +49,10 @@ RUN git clone https://github.com/data61/MP-SPDZ mp-spdz-${MP_SPDZ_VERSION} && \
 
 WORKDIR ${USER_HOME}
 
-RUN git checkout ${MP_SPDZ_VERSION}
+RUN git checkout ${MP_SPDZ_VERSION} && \
+  git submodule set-url -- mpir https://github.com/wbhart/mpir
 
-RUN echo USE_NTL = 0 >> CONFIG.mine && \
-  echo USE_GF2N_LONG = 0 >> CONFIG.mine && \
-  echo MOD = -DMAX_MOD_SZ=6 >> CONFIG.mine && \
-  echo ARCH = -march=native >> CONFIG.mine && \
+RUN echo USE_GF2N_LONG = 0 >> CONFIG.mine && \
   echo MY_CFLAGS = -DINSECURE >> CONFIG.mine
 
 # Compile MP-SPDZ
@@ -59,15 +61,15 @@ RUN mv local/lib/* /usr/local/lib/
 
 # Compile ONLY SPDZ-2 Online
 RUN make -j online
-
-RUN ./Scripts/tldr.sh
-
 ENV LD_LIBRARY_PATH="/usr/local/lib"
 
-# prepare Crypto Material
-COPY ${CRYPTO_MATERIAL_ARCHIVE} /mp-spdz/material.jar
-RUN unzip -o -d Player-Data material.jar && \
-  rm material.jar
+# Generate tuples
+RUN mkdir -p Player-Data/2-p-128 Player-Data/2-2-40 && \
+  echo "2 ${MAC_KEY_P_P0}" >> Player-Data/2-p-128/Player-MAC-Keys-p-P0 && \
+  echo "2 ${MAC_KEY_P_P1}" >> Player-Data/2-p-128/Player-MAC-Keys-p-P1 && \
+  echo "2 ${MAC_KEY_2_P0}" >> Player-Data/2-2-40/Player-MAC-Keys-2-P0 && \
+  echo "2 ${MAC_KEY_2_P1}" >> Player-Data/2-2-40/Player-MAC-Keys-2-P1 && \
+  ./Fake-Offline.x --prime ${PRIME} 2
 
 RUN apt-get remove automake build-essential git libboost-dev libboost-thread-dev libssl-dev libtool m4 texinfo yasm unzip -y --purge \
   && DEBIAN_FRONTEND=noninteractive apt-get autoremove --purge -y \
