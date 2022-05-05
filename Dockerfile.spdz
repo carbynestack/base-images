@@ -12,7 +12,7 @@ FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955
 
 ARG VERSION
 ARG ARTIFACT_NAME="spdz"
-ARG ARTIFACT_TAG="v0.2.8"
+ARG ARTIFACT_TAG="642d11f"
 ARG DESCRIPTION="Carbyne Stack SPDZ Base Image"
 ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
 ARG PRIME="198766463529478683931867765928436695041"
@@ -52,7 +52,7 @@ RUN git checkout ${ARTIFACT_TAG} && \
   git submodule set-url -- mpir https://github.com/wbhart/mpir
 
 RUN echo USE_GF2N_LONG = 0 >> CONFIG.mine && \
-  echo MY_CFLAGS = -DINSECURE >> CONFIG.mine
+  echo MY_CFLAGS = -DINSECURE -DNO_CLIENT_TLS >> CONFIG.mine
 
 # Compile MP-SPDZ
 RUN make -j mpir
