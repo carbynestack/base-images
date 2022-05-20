@@ -12,7 +12,7 @@ FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955
 
 ARG VERSION
 ARG ARTIFACT_NAME="spdz"
-ARG ARTIFACT_TAG="642d11f"
+ARG ARTIFACT_TAG="5350e66"
 ARG DESCRIPTION="Carbyne Stack SPDZ Base Image"
 ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
 ARG PRIME="198766463529478683931867765928436695041"
@@ -43,7 +43,7 @@ RUN set -uex \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/data61/MP-SPDZ mp-spdz-${ARTIFACT_TAG} && \
+RUN git clone https://github.com/carbynestack/MP-SPDZ mp-spdz-${ARTIFACT_TAG} && \
   ln -s mp-spdz-${ARTIFACT_TAG} ${USER_HOME}
 
 WORKDIR ${USER_HOME}
