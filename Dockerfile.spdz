@@ -12,14 +12,10 @@ FROM ubuntu@sha256:10cbddb6cf8568f56584ccb6c866203e68ab8e621bb87038e254f6f27f955
 
 ARG VERSION
 ARG ARTIFACT_NAME="spdz"
-ARG ARTIFACT_TAG="5350e66"
+ARG SPDZ_VERSION="5350e66"
+ARG ARTIFACT_TAG="5350e66_no-offline"
 ARG DESCRIPTION="Carbyne Stack SPDZ Base Image"
 ARG RELEASE_PAGE="https://github.com/carbynestack/base-images/releases"
-ARG PRIME="198766463529478683931867765928436695041"
-ARG MAC_KEY_P_P0="-88222337191559387830816715872691188861"
-ARG MAC_KEY_P_P1="1113507028231509545156335486838233835"
-ARG MAC_KEY_2_P0="0xb660b323e6"
-ARG MAC_KEY_2_P1="0x4ec9a0343c"
 
 ENV GROUP_ID=1000 \
     GROUP_NAME="cs" \
@@ -48,7 +44,7 @@ RUN git clone https://github.com/carbynestack/MP-SPDZ mp-spdz-${ARTIFACT_TAG} &&
 
 WORKDIR ${USER_HOME}
 
-RUN git checkout ${ARTIFACT_TAG} && \
+RUN git checkout ${SPDZ_VERSION} && \
   git submodule set-url -- mpir https://github.com/wbhart/mpir
 
 RUN echo USE_GF2N_LONG = 0 >> CONFIG.mine && \
@@ -61,14 +57,6 @@ RUN mv local/lib/* /usr/local/lib/
 # Compile ONLY SPDZ-2 Online
 RUN make -j online
 ENV LD_LIBRARY_PATH="/usr/local/lib"
-
-# Generate tuples
-RUN mkdir -p Player-Data/2-p-128 Player-Data/2-2-40 && \
-  echo "2 ${MAC_KEY_P_P0}" >> Player-Data/2-p-128/Player-MAC-Keys-p-P0 && \
-  echo "2 ${MAC_KEY_P_P1}" >> Player-Data/2-p-128/Player-MAC-Keys-p-P1 && \
-  echo "2 ${MAC_KEY_2_P0}" >> Player-Data/2-2-40/Player-MAC-Keys-2-P0 && \
-  echo "2 ${MAC_KEY_2_P1}" >> Player-Data/2-2-40/Player-MAC-Keys-2-P1 && \
-  ./Fake-Offline.x --prime ${PRIME} 2
 
 RUN apt-get remove automake build-essential git libboost-dev libboost-thread-dev libssl-dev libtool m4 texinfo yasm unzip -y --purge \
   && DEBIAN_FRONTEND=noninteractive apt-get autoremove --purge -y \
